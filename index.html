@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SolarSense – UV & Wetter</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a2f;
+      --panel-2: #16223b;
+      --primary: #3b82f6;
+      --primary-2: #60a5fa;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 16px;
+      --card-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --ring-deg: 0deg;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; background: radial-gradient(1200px 600px at 70% -10%, #122347 0%, #0b1020 45%); }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: var(--text); transition: background 0.8s ease; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: linear-gradient(180deg, rgba(18,26,47,0.85), rgba(18,26,47,0.55));
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav {
+      display: flex; align-items: center; gap: 16px; padding: 14px 18px; max-width: 1100px; margin: 0 auto;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px;
+    }
+    .logo .mark {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: conic-gradient(from 180deg, var(--primary), var(--primary-2), #8b5cf6, var(--primary));
+      box-shadow: 0 6px 18px rgba(59,130,246,0.35);
+    }
+    .container { max-width: 1100px; margin: 20px auto; padding: 0 18px; }
+    .grid {
+      display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px;
+    }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+    }
+    .card h2 {
+      margin: 0; padding: 18px 18px 0; font-size: 18px;
+    }
+    .card .content { padding: 18px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .chip {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      padding: 8px 10px; border-radius: 999px; font-size: 13px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; flex: 1; min-width: 180px; }
+    label { color: var(--muted); font-size: 13px; }
+    input, select {
+      width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04); color: var(--text);
+      outline: none;
+    }
+    .btn {
+      background: linear-gradient(180deg, var(--primary), var(--primary-2));
+      color: white; font-weight: 600; padding: 10px 14px; border: 0; border-radius: 12px; cursor: pointer;
+      box-shadow: 0 10px 24px rgba(59,130,246,0.35);
+    }
+    .btn.secondary {
+      background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: none;
+    }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    @media (max-width: 620px) { .metrics { grid-template-columns: 1fr 1fr; } }
+    .metric {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 12px;
+    }
+    .metric .label { color: var(--muted); font-size: 12px; }
+    .metric .value { font-size: 22px; font-weight: 700; margin-top: 6px; }
+    .progress {
+      height: 14px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .progress .bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--success), var(--primary)); transition: width 0.3s ease; }
+    .timer {
+      display: flex; align-items: center; gap: 10px; font-size: 26px; font-weight: 700;
+    }
+    .status { font-size: 13px; color: var(--muted); }
+    .notice {
+      border-left: 3px solid var(--primary); background: rgba(59,130,246,0.08);
+      padding: 10px 12px; border-radius: 10px; font-size: 13px; color: var(--muted);
+    }
+    .ring {
+      width: 140px; height: 140px; border-radius: 50%;
+      background: conic-gradient(var(--primary) var(--ring-deg), rgba(255,255,255,0.1) 0);
+      display: grid; place-items: center; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .ring-inner {
+      width: 108px; height: 108px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); display: grid; place-items: center;
+      font-weight: 700; font-size: 22px;
+    }
+    .inline { display: inline-flex; gap: 8px; align-items: center; }
+    .muted { color: var(--muted); }
+    .danger { color: var(--danger); }
+    .warning { color: var(--warning); }
+    .success { color: var(--success); }
+    /* Wetter-Hintergründe */
+    .bg-sun { background: radial-gradient(800px 400px at 70% -10%, #fbbf24 0%, #f59e0b 40%, #0b1020 90%) !important; }
+    .bg-cloud { background: radial-gradient(800px 400px at 70% -10%, #64748b 0%, #334155 50%, #0b1020 90%) !important; }
+    .bg-rain { background: radial-gradient(800px 400px at 70% -10%, #375577 0%, #1f3347 50%, #0b1020 90%) !important; }
+    .bg-snow { background: radial-gradient(800px 400px at 70% -10%, #a9c6de 0%, #6b86a1 50%, #0b1020 90%) !important; }
+    .bg-storm { background: radial-gradient(800px 400px at 70% -10%, #7c3aed 0%, #4c1d95 50%, #0b1020 90%) !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="logo">
+        <div class="mark"></div>
+        <div>SolarSense</div>
+      </div>
+      <div class="chip" id="locStatus">Ort: bitte eingeben</div>
+      <div class="chip" id="sunStatus">UV: – | Sonnenaufgang: – | Sonnenuntergang: –</div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="grid">
+      <!-- Links: Ort & Bedingungen -->
+      <div class="card">
+        <h2>Ort & Bedingungen</h2>
+        <div class="content">
+          <div class="row">
+            <div class="field" style="flex:2;">
+              <label>Ort (z. B. Hamburg)</label>
+              <input type="text" id="city" placeholder="Stadtname" />
+            </div>
+            <div class="field" style="align-self:flex-end; flex:1;">
+              <button class="btn" id="loadBtn">Laden</button>
+            </div>
+          </div>
+
+          <div class="metrics">
+            <div class="metric">
+              <div class="label">Temperatur</div>
+              <div class="value" id="tempNow">–</div>
+            </div>
+            <div class="metric">
+              <div class="label">Wetter</div>
+              <div class="value" id="weatherNow">–</div>
+            </div>
+            <div class="metric">
+              <div class="label">UV Index</div>
+              <div class="value" id="uvNow">–</div>
+            </div>
+          </div>
+
+          <div class="notice" id="adviceBox">
+            Empfehlung basiert auf UV‑Daten, Hauttyp, SPF und Abdeckung. Bitte Ort laden.
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <div class="field">
+              <label>Hauttyp (Fitzpatrick)</label>
+              <select id="skinType">
+                <option value="I">I – sehr hell, brennt leicht</option>
+                <option value="II">II – hell</option>
+                <option value="III" selected>III – mittel</option>
+                <option value="IV">IV – oliv</option>
+                <option value="V">V – dunkel</option>
+                <option value="VI">VI – sehr dunkel</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>SPF (Sonnenschutzfaktor)</label>
+              <input type="number" id="spf" min="1" max="100" value="15" />
+            </div>
+            <div class="field">
+              <label>Kleidung/Abdeckung (%)</label>
+              <input type="range" id="coverage" min="0" max="95" value="40" />
+              <div class="status">Bedeckung: <span id="coverageVal">40%</span></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label>Tagesziel (Minuten Sonne)</label>
+              <input type="number" id="dailyGoal" min="5" max="180" value="30" />
+            </div>
+            <div class="field" style="align-self:flex-end;">
+              <button class="btn secondary" id="recalcBtn">Empfehlung aktualisieren</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rechts: Timer & Ziel -->
+      <div class="card">
+        <h2>Timer & Ziel</h2>
+        <div class="content">
+          <div class="row" style="justify-content:space-between;">
+            <div class="timer">
+              <span id="timerDisplay">00:00:00</span>
+              <button class="btn" id="startBtn">Start</button>
+              <button class="btn secondary" id="stopBtn" disabled>Stop</button>
+              <button class="btn secondary" id="resetBtn" disabled>Reset</button>
+            </div>
+            <div class="ring" id="goalRing">
+              <div class="ring-inner" id="ringInner">0%</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Empfohlene maximale Sonnenzeit heute</label>
+            <div class="inline">
+              <div class="value" id="safeTime">– Minuten</div>
+              <div class="muted">(<span id="riskNote">–</span>)</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Fortschritt zum Tagesziel</label>
+            <div class="progress">
+              <div class="bar" id="goalBar"></div>
+            </div>
+            <div class="status">Heute: <span id="todayMinutes">0</span> min von <span id="goalMinutes">30</span> min</div>
+          </div>
+
+          <div class="status" id="warningBox"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Details -->
+    <div class="card" style="margin-top:18px;">
+      <h2>Details & Hinweise</h2>
+      <div class="content">
+        <div class="row" style="gap:18px; align-items:flex-start;">
+          <div class="field" style="flex:2;">
+            <label>Berechnungsgrundlage</label>
+            <div class="status">
+              UV‑Index dient als Proxy für erythemwirksame Strahlung. Die sichere Zeit nutzt typische MED‑Werte je Hauttyp und wird durch Kleidung sowie SPF angepasst. Richtwert, keine medizinische Beratung.
+            </div>
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Datenschutz</label>
+            <div class="status">
+              Browser‑only. Keine Server, keine Accounts, keine Speicherung.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer" style="color:var(--muted); text-align:center; font-size:12px; padding:18px; margin-top:8px;">
+      Öffentliches API: Open‑Meteo (Geocoding, Wetter, UV, Sonne). Keine Schlüssel erforderlich.
+    </div>
+  </div>
+
+  <script>
+    // --- Zustand ---
+    const state = {
+      coords: null, cityName: null,
+      current: { uv: null, temp: null, weathercode: null, sunrise: null, sunset: null },
+      config: { skinType: 'III', spf: 15, coveragePct: 40, dailyGoalMin: 30 },
+      timer: { startAt: null, elapsedMs: 0, running: false },
+      todayProgressMin: 0
+    };
+
+    // --- Elemente ---
+    const el = {
+      locStatus: document.getElementById('locStatus'),
+      sunStatus: document.getElementById('sunStatus'),
+      city: document.getElementById('city'),
+      loadBtn: document.getElementById('loadBtn'),
+      uvNow: document.getElementById('uvNow'),
+      tempNow: document.getElementById('tempNow'),
+      weatherNow: document.getElementById('weatherNow'),
+      skinType: document.getElementById('skinType'),
+      spf: document.getElementById('spf'),
+      coverage: document.getElementById('coverage'),
+      coverageVal: document.getElementById('coverageVal'),
+      dailyGoal: document.getElementById('dailyGoal'),
+      recalcBtn: document.getElementById('recalcBtn'),
+      adviceBox: document.getElementById('adviceBox'),
+      startBtn: document.getElementById('startBtn'),
+      stopBtn: document.getElementById('stopBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      timerDisplay: document.getElementById('timerDisplay'),
+      safeTime: document.getElementById('safeTime'),
+      riskNote: document.getElementById('riskNote'),
+      goalBar: document.getElementById('goalBar'),
+      todayMinutes: document.getElementById('todayMinutes'),
+      goalMinutes: document.getElementById('goalMinutes'),
+      goalRing: document.getElementById('goalRing'),
+      ringInner: document.getElementById('ringInner'),
+      warningBox: document.getElementById('warningBox'),
+    };
+
+    // --- Konstanten ---
+    const MED = { I: 200, II: 250, III: 300, IV: 350, V: 400, VI: 450 }; // grobe Richtwerte (J/m^2)
+    const UV_W_PER_UVI = 0.025; // ~25 mW/m^2 pro UVI → 0.025 W/m^2
+
+    // --- Utilities ---
+    function fmtTime(ms) {
+      const s = Math.floor(ms / 1000);
+      const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+      const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+      const ss = String(s % 60).padStart(2, '0');
+      return `${hh}:${mm}:${ss}`;
+    }
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+    function computeSafeMinutes(uv, skinType, spf, coveragePct) {
+      if (!uv || uv <= 0) return 0;
+      const med = MED[skinType] || MED['III'];
+      const eryW = uv * UV_W_PER_UVI; // W/m^2
+      const spfFactor = clamp(spf, 1, 100);
+      const exposureAreaFactor = clamp(1 - (coveragePct / 100), 0.05, 1);
+      const effectiveRate = eryW / spfFactor * exposureAreaFactor; // W/m^2
+      const seconds = med / effectiveRate;
+      const minutes = Math.floor(seconds / 60);
+      return clamp(minutes, 0, 240);
+    }
+
+    function riskCategory(uv) {
+      if (uv == null) return 'unbekannt';
+      if (uv < 3) return 'niedrig';
+      if (uv < 6) return 'mittel';
+      if (uv < 8) return 'hoch';
+      return 'sehr hoch';
+    }
+
+    function setRingProgress(percent) {
+      const deg = Math.round(clamp(percent, 0, 100) / 100 * 360);
+      document.documentElement.style.setProperty('--ring-deg', `${deg}deg`);
+      el.ringInner.textContent = `${Math.round(clamp(percent,0,100))}%`;
+    }
+
+    function updateGoalUI() {
+      const goal = state.config.dailyGoalMin;
+      const prog = clamp(state.todayProgressMin / goal * 100, 0, 100);
+      el.goalMinutes.textContent = goal;
+      el.todayMinutes.textContent = Math.round(state.todayProgressMin);
+      el.goalBar.style.width = `${prog}%`;
+      setRingProgress(prog);
+    }
+
+    function notify(message, level='info') {
+      el.warningBox.textContent = message;
+      el.warningBox.className = 'status ' + (level === 'warn' ? 'warning' : level === 'danger' ? 'danger' : 'muted');
+    }
+
+    // --- Wettercode → Text & Hintergrund ---
+    const weatherMap = {
+      0: { text: 'Sonnig', bg: 'bg-sun' },
+      1: { text: 'Überwiegend klar', bg: 'bg-sun' },
+      2: { text: 'Teilweise bewölkt', bg: 'bg-cloud' },
+      3: { text: 'Bewölkt', bg: 'bg-cloud' },
+      45: { text: 'Nebel', bg: 'bg-cloud' },
+      48: { text: 'Reifiger Nebel', bg: 'bg-cloud' },
+      51: { text: 'Feiner Nieselregen', bg: 'bg-rain' },
+      53: { text: 'Nieselregen', bg: 'bg-rain' },
+      55: { text: 'Starker Nieselregen', bg: 'bg-rain' },
+      61: { text: 'Leichter Regen', bg: 'bg-rain' },
+      63: { text: 'Regen', bg: 'bg-rain' },
+      65: { text: 'Starker Regen', bg: 'bg-rain' },
+      71: { text: 'Leichter Schneefall', bg: 'bg-snow' },
+      73: { text: 'Schneefall', bg: 'bg-snow' },
+      75: { text: 'Starker Schneefall', bg: 'bg-snow' },
+      95: { text: 'Gewitter', bg: 'bg-storm' },
+      96: { text: 'Gewitter mit Hagel', bg: 'bg-storm' },
+      99: { text: 'Starkes Gewitter', bg: 'bg-storm' }
+    };
+    function applyWeatherBackground(code) {
+      document.body.classList.remove('bg-sun','bg-cloud','bg-rain','bg-snow','bg-storm');
+      const bg = weatherMap[code]?.bg || null;
+      if (bg) document.body.classList.add(bg);
+    }
+
+    // --- API: Open-Meteo ---
+    async function geocodeCity(name) {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=de`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Geocoding fehlgeschlagen');
+      const data = await res.json();
+      if (!data.results || data.results.length === 0) throw new Error('Ort nicht gefunden');
+      return data.results[0]; // {name, latitude, longitude, country, ...}
+    }
+
+    async function fetchConditions(lat, lon) {
+      const url = new URL('https://api.open-meteo.com/v1/forecast');
+      url.searchParams.set('latitude', lat);
+      url.searchParams.set('longitude', lon);
+      url.searchParams.set('current', 'uv_index,temperature_2m,weathercode');
+      url.searchParams.set('daily', 'sunrise,sunset');
+      url.searchParams.set('timezone', 'auto');
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error('Wetterdaten fehlgeschlagen');
+      const data = await res.json();
+      const uv = data?.current?.uv_index ?? null;
+      const temp = data?.current?.temperature_2m ?? null;
+      const code = data?.current?.weathercode ?? null;
+      const sunrise = data?.daily?.sunrise?.[0] ?? null;
+      const sunset = data?.daily?.sunset?.[0] ?? null;
+
+      state.current = { uv, temp, weathercode: code, sunrise, sunset };
+      el.uvNow.textContent = uv != null ? uv.toFixed(1) : '–';
+      el.tempNow.textContent = temp != null ? `${Math.round(temp)} °C` : '–';
+      el.weatherNow.textContent = weatherMap[code]?.text || '–';
+      el.sunStatus.textContent = `UV: ${uv != null ? uv.toFixed(1) : '–'} | Sonnenaufgang: ${sunrise ? new Date(sunrise).toLocaleTimeString() : '–'} | Sonnenuntergang: ${sunset ? new Date(sunset).toLocaleTimeString() : '–'}`;
+      applyWeatherBackground(code);
+      recalcAdvice();
+    }
+
+    // --- Empfehlung berechnen ---
+    function recalcAdvice() {
+      const { uv } = state.current;
+      const { skinType, spf, coveragePct } = state.config;
+      const safeMin = computeSafeMinutes(uv, skinType, spf, coveragePct);
+      el.safeTime.textContent = `${safeMin} Minuten`;
+      el.riskNote.textContent = `UV-Risiko: ${riskCategory(uv)}`;
+      if (!uv || uv <= 0) {
+        notify('UV-Daten nicht verfügbar. Bitte später erneut versuchen oder anderen Ort wählen.', 'warn');
+      } else if (riskCategory(uv) === 'sehr hoch') {
+        notify('Sehr hohe UV-Belastung – zusätzliche Vorsicht (Schatten, Hut, SPF).', 'warn');
+      } else {
+        notify('Richtwert basiert auf aktuellen Bedingungen. Passe bei Hitze, Höhe und Reflexion an.', 'info');
+      }
+    }
+
+    // --- Timer ---
+    let tickHandle = null;
+    function startTimer() {
+      if (state.timer.running) return;
+      state.timer.running = true;
+      state.timer.startAt = Date.now();
+      el.startBtn.disabled = true;
+      el.stopBtn.disabled = false;
+      el.resetBtn.disabled = false;
+      el.warningBox.textContent = '';
+      tickHandle = setInterval(() => {
+        const now = Date.now();
+        const delta = now - state.timer.startAt;
+        const total = state.timer.elapsedMs + delta;
+        el.timerDisplay.textContent = fmtTime(total);
+
+        const minutes = Math.floor(total / 60000);
+        const goal = state.config.dailyGoalMin;
+        const pctGoal = clamp((state.todayProgressMin + minutes) / goal * 100, 0, 100);
+
+        // Warnung bei 80% der empfohlenen Maximalzeit
+        const safeMin = parseInt((el.safeTime.textContent || '0').replace(/\D/g,'')) || 0;
+        if (safeMin > 0 && minutes >= Math.floor(safeMin * 0.8)) {
+          notify('Du näherst dich der empfohlenen Maximalzeit – achte auf Schutz.', 'warn');
+        }
+        setRingProgress(pctGoal);
+      }, 1000);
+    }
+    function stopTimer() {
+      if (!state.timer.running) return;
+      const now = Date.now();
+      const delta = now - state.timer.startAt;
+      state.timer.elapsedMs += delta;
+      state.timer.running = false;
+      clearInterval(tickHandle);
+      tickHandle = null;
+
+      const minutes = Math.floor(state.timer.elapsedMs / 60000);
+      state.todayProgressMin += minutes;
+      state.timer.elapsedMs = 0;
+      el.timerDisplay.textContent = fmtTime(0);
+      updateGoalUI();
+      el.startBtn.disabled = false;
+      el.stopBtn.disabled = true;
+    }
+    function resetTimer() {
+      state.timer.elapsedMs = 0;
+      state.timer.running = false;
+      clearInterval(tickHandle);
+      tickHandle = null;
+      el.timerDisplay.textContent = fmtTime(0);
+      el.startBtn.disabled = false;
+      el.stopBtn.disabled = true;
+      el.resetBtn.disabled = true;
+      notify('Timer zurückgesetzt.', 'info');
+    }
+
+    // --- Events ---
+    el.coverage.addEventListener('input', () => {
+      state.config.coveragePct = parseInt(el.coverage.value);
+      el.coverageVal.textContent = `${state.config.coveragePct}%`;
+    });
+    el.skinType.addEventListener('change', () => {
+      state.config.skinType = el.skinType.value;
+      recalcAdvice();
+    });
+    el.spf.addEventListener('input', () => {
+      state.config.spf = parseInt(el.spf.value) || 1;
+      recalcAdvice();
+    });
+    el.dailyGoal.addEventListener('input', () => {
+      state.config.dailyGoalMin = parseInt(el.dailyGoal.value) || 30;
+      updateGoalUI();
+    });
+    el.recalcBtn.addEventListener('click', recalcAdvice);
+
+    el.loadBtn.addEventListener('click', async () => {
+      const name = (el.city.value || '').trim();
+      if (!name) { notify('Bitte einen Ort eingeben.', 'warn'); return; }
+      try {
+        el.loadBtn.disabled = true;
+        el.loadBtn.textContent = 'Lade…';
+        const geo = await geocodeCity(name);
+        state.coords = { lat: geo.latitude, lon: geo.longitude };
+        state.cityName = `${geo.name}${geo.country ? ', ' + geo.country : ''}`;
+        el.locStatus.textContent = `Ort: ${state.cityName} (${geo.latitude.toFixed(4)}, ${geo.longitude.toFixed(4)})`;
+        await fetchConditions(geo.latitude, geo.longitude);
+      } catch (e) {
+        notify(e.message || 'Fehler beim Laden der Daten.', 'warn');
+      } finally {
+        el.loadBtn.disabled = false;
+        el.loadBtn.textContent = 'Laden';
+      }
+    });
+
+    el.startBtn.addEventListener('click', startTimer);
+    el.stopBtn.addEventListener('click', stopTimer);
+    el.resetBtn.addEventListener('click', resetTimer);
+
+    // --- Init ---
+    updateGoalUI();
+  </script>
+</body>
+</html>
